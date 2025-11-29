@@ -3,7 +3,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
 package com.mycompany.programmingchallenge;
-
+import java.lang.*;
 /**
  *
  * @author nerubaya
@@ -15,11 +15,10 @@ public class Agent extends Object{
     private int power;
     
     public Agent(int action, int posx, int posy, int power){
-        this.action = action;
+        super(action);
         this.posx = posx;
         this.posy = posy;
         this.power = power;
-        
     }
     
     public int getAction(){
@@ -46,4 +45,26 @@ public class Agent extends Object{
             power = 0;
         }
     } 
+
+    public int decideAction(){
+        int r = Math.random(0,1);
+        if(r <= 0.2){
+            action = 1; //left
+        }
+        else if(r <= 0.4){
+            action = 2; //right
+        }
+        else if(r <= 0.6){
+            action = 3; //up
+        }
+        else if(r <= 0.8){
+            action = 4; //down
+        }
+        else{
+            action = 5; //still
+        }
+    }
+
+    public int 
+
 }
