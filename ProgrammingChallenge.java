@@ -27,10 +27,12 @@ public class ProgrammingChallenge {
         iX = input.nextInt();
         System.out.println("Please input the number of a column you want an object initially to anchor to:");
         iY = input.nextInt();
+
+        Object Object = new Object(iY, iX);
         Agent[] agents = Object.createAgents(N, M);
 
-        
         char[][] grid = new char[N][M];
+
         for (int r = 0; r < N; r++) {
             for (int c = 0; c < M; c++) {
                 grid[r][c] = '.';
