@@ -9,7 +9,7 @@ import java.lang.*;
  * @author nerubaya
  */
 public class Agent extends Object{
-    private int action; //  A = {left, right, up, down, still} => 1...5
+     //  A = {left, right, up, down, still} => 1...5
     private int posx;
     private int posy; 
     private int power;
@@ -64,7 +64,4 @@ public class Agent extends Object{
             action = 5; //still
         }
     }
-
-    public int 
-
 }

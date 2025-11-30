@@ -48,7 +48,7 @@ public boolean withinObject(Agent a, int n, int m){
 }
     
 
-public Agent[] createAgents(){
+public Agent[] createAgents(int N, int M){
     Agent[] agents = new Agent[N * M];
 
     for(int i = 0; i < agents.length; i++){
@@ -108,5 +108,24 @@ public int decideMove(Agent[] agents){
     }
 
     return move;
+}
+
+public void moveObject(Agent[] agents){
+    int m = decideMove(agents);
+    if(m == 1){
+        iX = iX - 1;
+    }
+    else if(m == 2){
+        iX = iX + 1;
+    }
+    else if(m == 3){
+        iY = iY + 1;
+    }
+    else if(m == 4){
+        iY = iY - 1;
+    }
+    else{
+        continue;
+    }
 }
 }
