@@ -53,36 +53,43 @@ public class Object {
     }
 
     // Check if agent is inside object area
-    public boolean withinObject(Agent agent, int objRowLength, int objColLength){
-        int agentX = agent.getPosx();
-        int agentY = agent.getPosy();
+    public boolean withinObject(Agent agent, int objHeight, int objWidth) {
+        // retrieve agent coordinates (column/row)
+        int ax = agent.getPosx();  
+        int ay = agent.getPosy();  
 
-        if(agentX >= topLeftX && agentX < topLeftX + objRowLength &&
-           agentY >= topLeftY && agentY < topLeftY + objColLength){
-            return true;
-        }
-        return false;
+        // check if agent falls into object's bounding box
+        return (
+            ax >= topLeftX &&
+            ax <  topLeftX + objWidth &&   
+
+            ay >= topLeftY &&
+            ay <  topLeftY + objHeight
+        );
     }
     
     // Create one agent per grid cell
-    public Agent[] createAgents(int gridRow, int gridCol){
-        Agent[] agents = new Agent[gridRow * gridCol];
+    public Agent[] createAgents(int rows, int cols){
 
+        // total number of agents equals number of grid cells
+        Agent[] agents = new Agent[rows * cols];
         int index = 0;
-        for(int row = 0; row < gridRow; row++){
-            for(int col = 0; col < gridCol; col++){
-                // a new agent is created for that specific cell
-                agents[index] = new Agent(row, col);
-                // newly created agent then produces a move decision
-                agents[index].decideAction();
+
+        // iterate over every cell and create an agent tied to that position
+        for(int y = 0; y < rows; y++){
+            for(int x = 0; x < cols; x++){
+                agents[index] = new Agent(x, y); // (column, row)
+                agents[index].decideAction();    // each agent chooses its action immediately
                 index++;
             }
         }
+
         return agents;
     }
 
     // Count majority movement among powered agents
     public int decideMove(Agent[] agents){
+        
         // all the agent move votes will be set to 0 initially
         int cLeft = 0;
         int cRight = 0;
@@ -92,11 +99,13 @@ public class Object {
         
         // goes through the list of current agents
         for(Agent agent : agents){
-            if(agent.getPower() == 1){
-                // if the agent is empowered, then the program will get its individual move decision,
-                // ---> then it will add it to the ballot for the available moves
-                int a = agent.getAction();
 
+            // only agents with power contribute to the vote
+            if(agent.getPower() == 1){
+
+                int a = agent.getAction();  // get agent's individual decision
+
+                // add vote to the matching counter
                 if(a == 1) cLeft++;
                 if(a == 2) cRight++;
                 if(a == 3) cUp++;
@@ -105,62 +114,105 @@ public class Object {
             }
         }
 
+        
         // Choose the direction with highest count
         int move = 1;
         int max = cLeft;
         
         // a series of if statements that will check which move received the greatest number of votes
-        // after deciding which move is most popular, it will return the value of that move (1,2,3,4 or 5)
         if(cRight > max){ max = cRight; move = 2; }
         if(cUp > max){ max = cUp; move = 3; }
         if(cDown > max){ max = cDown; move = 4; }
         if(cStill > max){ max = cStill; move = 5; }
+        
+        // print which action won the vote
+        System.out.println("ACTION:");
+        switch(move){
+            case 1: System.out.println("Left");
+            break;
+            case 2: System.out.println("Right");
+            break;
+            case 3: System.out.println("Up");
+            break;
+            case 4: System.out.println("Down");
+            break;
+            case 5: System.out.println("Still");
+            break;
+        }
 
         return move;
     }
     
-    // moves the object (its top left coordinate) using the action most popular among the agents
-    public void moveObject(Agent[] agents){
-        int move = decideMove(agents);
-        
-        if(move == 1){
-            topLeftX--;
-        }
-        else if(move == 2){
-            topLeftX++;
-        }
-        else if(move == 3){
-            topLeftY--;
-        }
-        else if(move == 4){
-            topLeftY++;
-        }
-        else if(move == 5){
-            return;
-        }
+       // Checks if the object's next move keeps all "o" tiles inside the grid
+    public boolean isMoveValid(int move, int gridRows, int gridCols, int objHeight, int objWidth){
+
+        // copy current position so we can test a hypothetical move
+        int newX = topLeftX;
+        int newY = topLeftY;
+
+        // adjust coordinates based on the movement direction
+        if(move == 1) newX--;   // left
+        else if(move == 2) newX++; // right
+        else if(move == 3) newY--; // up
+        else if(move == 4) newY++; // down
+
+        // boundary check → ensure entire object stays inside grid
+        if(newX < 0) return false;
+        if(newY < 0) return false;
+
+        if(newX + objWidth  > gridCols) return false;
+        if(newY + objHeight > gridRows) return false;
+
+        return true;
     }
+
+    
+    // moves the object (its top left coordinate) using the action most popular among the agents
+    public void moveObject(Agent[] agents, int gridRows, int gridCols, int objHeight, int objWidth){
+
+    int attempts = 0;
+
+    int move = decideMove(agents);
+
+    // If illegal → regenerate direction up to 10 times
+    while(!isMoveValid(move, gridRows, gridCols, objHeight, objWidth) && attempts < 10){
+        move = (int)(Math.random() * 5) + 1;  // 1–5
+        attempts++;
+    }
+
+    // If STILL invalid after attempts → stay still
+    if(!isMoveValid(move, gridRows, gridCols, objHeight, objWidth)){
+        move = 5;
+    }
+
+    // Apply the valid movement
+    if(move == 1) topLeftX--;
+    else if(move == 2) topLeftX++;
+    else if(move == 3) topLeftY--;
+    else if(move == 4) topLeftY++;
+}
     
     // finds where the goal area will be located
     // first finds the available space within the grid for the goal to be located, 
     // --> then randomly picks an area within that space
-    public int[] calcGoalPos(char[][] grid, int rows, int cols){
+    public int[] calcGoalPos(int gridRows, int gridCols, int objHeight, int objWidth){
         
         // the goalPos is the top left corner of the goal area
         // if the object's top left corner reaches it, then it has fitted into the entire goal area
         // format: goalPos = x,y coordinates of the position
-        int[] goalPos = {0,0};
-        
+        int[] goal = new int[2];
         Random rand = new Random();
+
         
         // these limit variables will determine where the top left corner of the goal area will be located, 
         // --> they're calculuated based on grid values and object starting pos
         
         // upperLimit is equal to the number of rows in the grid, or the very last row
-        int upperLimit = rows;
+        int maxY = gridRows - objHeight;
         
         // subtracts the height of the object from the total height of the grid
         // --> thus, lowerLimit represents the earliest row that the goal can be placed in
-        int lowerLimit = (rows - topLeftY);
+        int maxX = gridCols - objWidth;
         
         // randomly calculuate where the goal will be located within available space within the grid
         // logic: let's say the grid height is 5, and the object's height is 2
@@ -170,19 +222,17 @@ public class Object {
         // adding the lower limit keeps it within the available rows
         // --> so 0 becomes 3, which is a valid row. 2 becomes 5, which is the last available row
         
-        goalPos[0] = rand.nextInt(upperLimit - lowerLimit + 1) + lowerLimit;
-        // column range is from 1 to the second to last position, this accounts for penalty zones
-        goalPos[1] = rand.nextInt(cols - 1) + 1;
         
-        return goalPos;
+            goal[1] = rand.nextInt(maxY + 1); // Y row
+            goal[0] = rand.nextInt(maxX + 1); // X col
+            
+          System.out.println("Goal Coordinates X: " + goal[1] + " Y: " + goal[0]);
+        return goal;
     }
     
     // checks if the object has reached the goal location
-    public boolean withinGoalArea(int[] goalPos){
-        if (topLeftX == goalPos[0]){
-            return true;
-        }
-        return false;
+    public boolean withinGoalArea(int[] goal){
+        return (topLeftX == goal[1] && topLeftY == goal[0]); //accounting for a natural shift in counting systems
     }
     
     // checks if the object is currently located in a penalty zone
